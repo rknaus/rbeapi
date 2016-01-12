@@ -33,5 +33,5 @@
 # #
 # Rbeapi toplevel namespace.
 module Rbeapi
-  VERSION = '0.4.0.swcfg'
+  VERSION = '0.5.0'
 end
