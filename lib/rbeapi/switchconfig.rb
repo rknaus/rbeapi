@@ -39,8 +39,6 @@ module Rbeapi
     ##
     # Section class
     #
-    # XXX: Is this the right doc format for a class and accessors?
-    #
     # A switch configuration section consists of the command line that
     # enters into the configuration mode, an array of command strings
     # that are executed in the current configuration mode, a reference
@@ -103,54 +101,7 @@ module Rbeapi
       end
 
       ##
-      # Prepend the word 'default' to a cmd.
-      #
-      # @param cmd [String] A command string
-      #
-      # @return [String] Returns command string with word 'default' prepended.
-      def prepend_default(cmd)
-        # Return if the command is prepended by a default
-        return cmd unless cmd.scan(/^\s*default\s+/).empty?
-        # If the command is prepended by a no, then remove it.
-        new_cmd = cmd.sub(/^(\s*)(no\s+)/, '\1')
-        new_cmd.sub(/^(?<foo>\s*)/, '\k<foo>default ')
-      end
-
-      ##
-      # Generates an array of commands for the current section. If the
-      # add_default option is set then each command is prepended with the
-      # word 'default'. Commands that enter a mode are not prepended with
-      # the word 'default'. Performs recursive calls to process children.
-      #
-      # @param opts [Hash] the options to create a message with.
-      #
-      # @option opts add_default [Boolean] Set to true to have commands
-      #   prepended with the word 'default'. Default is false.
-      #
-      # @return [Array<Strings>] Returns an array of commands that can be
-      #   sent to a switch.
-      def gen_commands(opts = {})
-        add_default = opts.fetch(:add_default, false)
-
-        # Iterate over the commands, if the command has an associated
-        # child then process the child. This will preserve the order of
-        # the configuration.
-        ret_cmds = []
-        cmds.each do |cmd|
-          child = get_child(cmd)
-          cmd = prepend_default(cmd) if add_default && !child
-          ret_cmds.push(cmd)
-          next unless child
-          child_cmds = child.gen_commands(opts)
-          next unless child_cmds.length > 0
-          ret_cmds.push(child_cmds)
-          ret_cmds.flatten!
-        end
-        ret_cmds
-      end
-
-      ##
-      # Private campare method to compare the commands between two Section
+      # Private compare method to compare the commands between two Section
       # classes.
       #
       # @param cmds2 [Array<String>] An array of commands.
@@ -166,7 +117,7 @@ module Rbeapi
       private :_compare_cmds
 
       ##
-      # Campare method to compare two Section classes.
+      # Compare method to compare two Section classes.
       # The comparison will recurse through all the children in the Sections.
       # The parent is ignored at the top level section. Only call this
       # method if self and section2 have the same line.
@@ -177,15 +128,6 @@ module Rbeapi
       #   that is not in section2.
       def compare_r(section2)
         fail '@line must equal section2.line' if @line != section2.line
-
-        # XXX Need to have a list of exceptions of mode commands that
-        # support default. If all the commands have been removed from
-        # that section in the new config then the old config just wants
-        # to default the mode command.
-        # ex: spanning-tree mst configuration
-        #       instance 1 vlan  1
-        # Currently generates this error:
-        # '   default instance 1 vlan  1' failed: invalid command
 
         results = Section.new(@line, nil)
 
@@ -218,7 +160,7 @@ module Rbeapi
       end
 
       ##
-      # Campare a Section class to the current section.
+      # Compare a Section class to the current section.
       # The comparison will recurse through all the children in the Sections.
       # The parent is ignored at the top level section.
       #
@@ -230,7 +172,7 @@ module Rbeapi
       #   section2 that is not in self.
       def compare(section2)
         if @line != section2.line
-          fail 'XXX What if @line does not equal section2.line'
+          fail '@line does not equal section2.line'
         end
 
         results = []
@@ -245,7 +187,6 @@ module Rbeapi
     ##
     # SwitchConfig class
     class SwitchConfig
-      attr_accessor :name
       attr_reader :global
 
       ##
@@ -255,16 +196,13 @@ module Rbeapi
       # references to all sub-sections (children).
       #
       # {
-      #   name: <string>,
       #   global: <Section>,
       # }
       #
       # @param config [String] A string containing the switch configuration.
       #
       # @return [Section] Returns an instance of Section
-      # XXX Name is not really used - can delete
-      def initialize(name, config)
-        @name = name
+      def initialize(config)
         @indent = 3
         chk_format(config)
         parse(config)
@@ -309,7 +247,6 @@ module Rbeapi
         prev_line = ''
         config.each_line do |line|
           # Ignore comment lines and the end statement if there
-          # XXX Fix parsing end
           next if line.start_with?('!') || line.start_with?('end')
           line.chomp!
           next if line.empty?
@@ -320,8 +257,6 @@ module Rbeapi
             section.parent.add_child(section)
             prev_indent = indent_level
           elsif indent_level < prev_indent
-            # XXX This has a bug if we pop more than one section
-            # XXX Bug if we have 2 subsections with intervening commands
             # End of current section
             section = section.parent
             prev_indent = indent_level
@@ -334,7 +269,7 @@ module Rbeapi
       private :parse
 
       ##
-      # Campare the current SwitchConfig class with another SwitchConfig class.
+      # Compare the current SwitchConfig class with another SwitchConfig class.
       #
       # @param switch_config [SwitchConfig] An instance of a SwitchConfig
       #   class to compare with the current instance.
