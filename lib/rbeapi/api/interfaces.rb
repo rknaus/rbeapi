@@ -365,7 +365,7 @@ module Rbeapi
       #
       # @return [Boolean] Returns true if the command completed successfully.
       def set_load_interval(name, opts = {})
-        commands = command_builder("load-interval", opts)
+        commands = command_builder('load-interval', opts)
         configure_interface(name, commands)
       end
     end
@@ -377,7 +377,7 @@ module Rbeapi
       DEFAULT_ETH_FLOWC_TX = 'off'
       DEFAULT_ETH_FLOWC_RX = 'off'
       DEFAULT_SPEED = 'default'
-      DEFAULT_LACP_PRIORITY = 32768
+      DEFAULT_LACP_PRIORITY = 32_768
 
       ##
       # get returns the specified Ethernet interface resource hash that
@@ -782,7 +782,7 @@ module Rbeapi
         grpid = name.scan(/(?<=Port-Channel)\d+/)[0]
         command = "show port-channel #{grpid} all-ports"
         config = node.enable(command, encoding: 'text')
-        values = config.first[:result]['output'].scan(/\bEthernet[^\s]+/)
+        values = config.first[:result]['output'].scan(/\bEthernet[^\s]+/).sort
         { members: values }
       end
       private :parse_members
@@ -925,7 +925,8 @@ module Rbeapi
       #
       # @return [Boolean] Returns true if the command completed successfully.
       def set_members(name, members, mode = nil)
-        fail ArgumentError, 'members must be an Array' unless members.is_a?(Array)
+        fail ArgumentError, 'members must be an Array' unless
+        members.is_a?(Array)
 
         current_members = Set.new parse_members(name)[:members]
         members = Set.new members
@@ -1164,7 +1165,7 @@ module Rbeapi
       #
       # @return [Hash<Symbol, Object>]
       def parse_multicast_group(config)
-        mdata = /multicast-group ([^\s]+)$/.match(config)
+        mdata = /^\s*vxlan multicast-group ([^\s]+)$/.match(config)
         { multicast_group: mdata ? mdata[1] : DEFAULT_MCAST_GRP }
       end
       private :parse_multicast_group
